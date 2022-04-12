@@ -1,0 +1,8 @@
+# main
+main.cpp
+
+# vscode setting
+.vscode/
+
+# cpp code formatfile
+.clang-format
