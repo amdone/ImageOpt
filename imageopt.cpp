@@ -86,7 +86,7 @@ imgopt::Size imgopt::ImgOpt::GetImageSize(const std::string imageFilePath) {
         }
         if (BMP == type) {
             unsigned char buffer[8];  //前4个字节是宽度，后4个字节是高度
-            ifs.seekg(18);  //宽高信息相对于文件头偏移16个字节
+            ifs.seekg(18);  //宽高信息相对于文件头偏移18个字节
             ifs.read((char*)&buffer[0], sizeof(buffer) * 8);
             image_size.w = buffer[3] * 65536 + buffer[2] * 4096 +
                            buffer[1] * 256 + buffer[0];
