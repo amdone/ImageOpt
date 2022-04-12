@@ -4,5 +4,8 @@ main.cpp
 # vscode setting
 .vscode/
 
-# cpp code formatfile
+# 用于格式化cpp代码的配置文件
 .clang-format
+
+# 编译生成的exe文件
+*.exe

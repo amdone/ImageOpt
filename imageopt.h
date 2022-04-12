@@ -18,7 +18,7 @@ namespace imgopt {
 /***
  * @brief 图片类型的枚举值，0表示不是一个图片
  */
-enum ImageType { NOT_IMAGE, JPG, PNG, BMP };
+enum ImageType { NOT_IMAGE, JPG, PNG, BMP, WEBP };
 
 /***
  * @brief This is a struct --> { w, h }
