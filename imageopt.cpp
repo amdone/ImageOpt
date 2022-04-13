@@ -48,6 +48,10 @@ imgopt::ImageType imgopt::ImgOpt::GetImageType(std::ifstream& ifs) {
     if (buffer[0] == 0x42 && buffer[1] == 0x4d) {
         return BMP;
     }
+    // gif header(hex) 47 49 46
+    if (buffer[0] == 0x47 && buffer[1] == 0x49 && buffer[2] == 0x46) {
+        return GIF;
+    }
     return NOT_IMAGE;
 }
 /***
@@ -70,6 +74,7 @@ imgopt::Size imgopt::ImgOpt::GetImageSize(const std::string imageFilePath) {
             case PNG: return this->GetPngSize(ifs);
             case BMP: return this->GetBmpSize(ifs);
             case WEBP: return this->GetWebpSize(ifs);
+            case GIF: return this->GetGifSize(ifs);
             default: return {0, 0};
         }
     }
@@ -137,6 +142,16 @@ imgopt::Size imgopt::ImgOpt::GetWebpSize(std::ifstream& ifs) {
     Size ret = {0, 0};
     unsigned char buffer[4];  //前2个字节是宽度，后2个字节是高度
     ifs.seekg(26);            //宽高信息相对于文件头偏移26个字节
+    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    ret.w = buffer[0] + buffer[1] * 256;
+    ret.h = buffer[2] + buffer[3] * 256;
+    ifs.close();
+    return ret;
+}
+imgopt::Size imgopt::ImgOpt::GetGifSize(std::ifstream& ifs) {
+    Size ret = {0, 0};
+    unsigned char buffer[4];  //前2个字节是宽度，后2个字节是高度
+    ifs.seekg(6);             //宽高信息相对于文件头偏移6个字节
     ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
     ret.w = buffer[0] + buffer[1] * 256;
     ret.h = buffer[2] + buffer[3] * 256;
