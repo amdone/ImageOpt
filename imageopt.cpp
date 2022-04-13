@@ -30,25 +30,23 @@ imgopt::ImageType imgopt::ImgOpt::GetImageType(std::ifstream& ifs) {
     }
     // png header(hex) 89 50 4E 47 0D 0A 1A 0A
     if (buffer[0] == 0x89) {
-        unsigned char png_header[8] = {0x89, 0x50, 0x4E, 0x47,
-                                       0x0D, 0x0A, 0x1A, 0x0A};
+        unsigned char png_header[8] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
         if (memcmp(png_header, buffer, 8) == 0) {
             return PNG;
         }
     }
-    // bmp header(hex) 42 4d
-    if (buffer[0] == 0x42 && buffer[1] == 0x4d) {
-        return BMP;
-    }
     // webp header(hex) 52 49 46 46 __ __ __ __  57 45 42 50
     if (buffer[0] == 0x52) {
-        unsigned char web_header[8] = {0x52, 0x49, 0x46, 0x46,
-                                       0x57, 0x45, 0x42, 0x50};
+        unsigned char web_header[8] = {0x52, 0x49, 0x46, 0x46, 0x57, 0x45, 0x42, 0x50};
         if (memcmp(web_header, buffer, 4) == 0) {
             if (memcmp(&web_header[4], &buffer[8], 4) == 0) {
                 return WEBP;
             }
         }
+    }
+    // bmp header(hex) 42 4d
+    if (buffer[0] == 0x42 && buffer[1] == 0x4d) {
+        return BMP;
     }
     return NOT_IMAGE;
 }
@@ -69,39 +67,29 @@ imgopt::Size imgopt::ImgOpt::GetImageSize(const std::string imageFilePath) {
     } else {
         ImageType type = this->GetImageType(ifs);
         if (JPG == type) {
-            unsigned char buffer[4];  //前2个字节是高度，后2个字节是宽度
-            ifs.seekg(163);  //宽高信息相对于文件头偏移163个字节
-            ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
-            image_size.h = buffer[0] * 256 + buffer[1];
-            image_size.w = buffer[2] * 256 + buffer[3];
-            ifs.close();
-            return image_size;
+            return this->GetJpegSize(ifs);
         }
         if (PNG == type) {
             unsigned char buffer[8];  //前4个字节是宽度，后4个字节是高度
-            ifs.seekg(16);  //宽高信息相对于文件头偏移16个字节
+            ifs.seekg(16);            //宽高信息相对于文件头偏移16个字节
             ifs.read((char*)&buffer[0], sizeof(buffer) * 8);
-            image_size.w = buffer[0] * 65536 + buffer[1] * 4096 +
-                           buffer[2] * 256 + buffer[3];
-            image_size.h = buffer[4] * 65536 + buffer[5] * 4096 +
-                           buffer[6] * 256 + buffer[7];
+            image_size.w = buffer[0] * 65536 + buffer[1] * 4096 + buffer[2] * 256 + buffer[3];
+            image_size.h = buffer[4] * 65536 + buffer[5] * 4096 + buffer[6] * 256 + buffer[7];
             ifs.close();
             return image_size;
         }
         if (BMP == type) {
             unsigned char buffer[8];  //前4个字节是宽度，后4个字节是高度
-            ifs.seekg(18);  //宽高信息相对于文件头偏移18个字节
+            ifs.seekg(18);            //宽高信息相对于文件头偏移18个字节
             ifs.read((char*)&buffer[0], sizeof(buffer) * 8);
-            image_size.w = buffer[3] * 65536 + buffer[2] * 4096 +
-                           buffer[1] * 256 + buffer[0];
-            image_size.h = buffer[7] * 65536 + buffer[6] * 4096 +
-                           buffer[5] * 256 + buffer[4];
+            image_size.w = buffer[3] * 65536 + buffer[2] * 4096 + buffer[1] * 256 + buffer[0];
+            image_size.h = buffer[7] * 65536 + buffer[6] * 4096 + buffer[5] * 256 + buffer[4];
             ifs.close();
             return image_size;
         }
         if (WEBP == type) {
             unsigned char buffer[4];  //前2个字节是宽度，后2个字节是高度
-            ifs.seekg(26);  //宽高信息相对于文件头偏移26个字节
+            ifs.seekg(26);            //宽高信息相对于文件头偏移26个字节
             ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
             image_size.w = buffer[0] + buffer[1] * 256;
             image_size.h = buffer[2] + buffer[3] * 256;
@@ -111,9 +99,7 @@ imgopt::Size imgopt::ImgOpt::GetImageSize(const std::string imageFilePath) {
     }
 #else
     FILE* fin = fopen(imageFilePath.c_str(), "rb+");
-    while (!feof(fin)) {
-        cout << fgetc(fin) << endl;
-    }
+    // Do something here
     fclose(fin);
 #endif
     return {0, 0};
@@ -125,11 +111,31 @@ imgopt::Size imgopt::ImgOpt::GetImageSize(const std::string imageFilePath) {
  * @param int& height 保存高度度到这个变量
  * @return void 虽然没有返回值，但是一旦得到width或height为 0 即为失败
  */
-void imgopt::ImgOpt::GetImageSize(const std::string imageFilePath,
-                                  int& width,
-                                  int& height) {
+void imgopt::ImgOpt::GetImageSize(const std::string imageFilePath, int& width, int& height) {
     imgopt::Size s = {0, 0};
     s = this->GetImageSize(imageFilePath);
     width = s.w;
     height = s.h;
+}
+
+imgopt::Size imgopt::ImgOpt::GetJpegSize(std::ifstream& ifs) {
+    Size ret;
+    //带有exif信息的jpg格式
+    int next_pos = 0x02;
+    unsigned char header[9];
+    while (1) {
+        ifs.seekg(next_pos);
+        ifs.read((char*)&header[0], sizeof(char) * 9);
+        if (header[0] == 0xff) {
+            next_pos = header[2] * 256 + header[3] + next_pos + 2;
+        }
+        if (header[1] == 0xc0) {
+            ret.w = header[5] * 256 + header[6];
+            ret.h = header[7] * 256 + header[8];
+            ifs.close();
+            return ret;
+        }
+    }
+    ifs.close();
+    return {-1, -1};
 }

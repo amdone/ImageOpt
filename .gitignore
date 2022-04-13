@@ -1,5 +1,8 @@
-# main
+# main 
 main.cpp
+
+# 解析命令行参数的头文件
+cmdline.h
 
 # vscode setting
 .vscode/
@@ -9,3 +12,6 @@ main.cpp
 
 # 编译生成的exe文件
 *.exe
+
+# Test文件夹
+test/

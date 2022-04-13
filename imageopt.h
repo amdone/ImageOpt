@@ -57,5 +57,6 @@ class ImgOpt {
      * @return void 虽然没有返回值，但是一旦得到width或height为 0 即为失败
      */
     void GetImageSize(const std::string imageFilePath, int& width, int& height);
+    Size GetJpegSize(std::ifstream& ifs);
 };
 }  // namespace imgopt
