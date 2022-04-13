@@ -18,7 +18,7 @@ namespace imgopt {
 /***
  * @brief 图片类型的枚举值，0表示不是一个图片
  */
-enum ImageType { NOT_IMAGE, JPG, PNG, BMP, WEBP, GIF };
+enum ImageType { NOT_IMAGE, JPG, PNG, BMP, WEBP, GIF, TIFF_II, TIFF_MM };
 
 /***
  * @brief This is a struct --> { w, h }
@@ -69,5 +69,7 @@ class ImgOpt {
     Size GetBmpSize(std::ifstream& ifs);
     Size GetWebpSize(std::ifstream& ifs);
     Size GetGifSize(std::ifstream& ifs);
+    Size GetTiffIISize(std::ifstream& ifs);
+    Size GetTiffMMSize(std::ifstream& ifs);
 };
 }  // namespace imgopt

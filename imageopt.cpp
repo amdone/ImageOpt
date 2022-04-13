@@ -52,6 +52,13 @@ imgopt::ImageType imgopt::ImgOpt::GetImageType(std::ifstream& ifs) {
     if (buffer[0] == 0x47 && buffer[1] == 0x49 && buffer[2] == 0x46) {
         return GIF;
     }
+    // tiff header(hex) 49492A or 4D4D2A
+    if (buffer[0] == 0x49 && buffer[1] == 0x49 && buffer[2] == 0x2a && buffer[3] == 0x00) {
+        return TIFF_II;
+    }
+    if (buffer[0] == 0x4D && buffer[1] == 0x4D && buffer[2] == 0x00 && buffer[3] == 0x2a) {
+        return TIFF_MM;
+    }
     return NOT_IMAGE;
 }
 /***
@@ -75,6 +82,8 @@ imgopt::Size imgopt::ImgOpt::GetImageSize(const std::string imageFilePath) {
             case BMP: return this->GetBmpSize(ifs);
             case WEBP: return this->GetWebpSize(ifs);
             case GIF: return this->GetGifSize(ifs);
+            case TIFF_II: return this->GetTiffIISize(ifs);
+            case TIFF_MM: return this->GetTiffMMSize(ifs);
             default: return {0, 0};
         }
     }
@@ -157,4 +166,26 @@ imgopt::Size imgopt::ImgOpt::GetGifSize(std::ifstream& ifs) {
     ret.h = buffer[2] + buffer[3] * 256;
     ifs.close();
     return ret;
+}
+imgopt::Size imgopt::ImgOpt::GetTiffIISize(std::ifstream& ifs) {
+    unsigned char buffer[4];
+    ifs.seekg(0x1e);  //宽
+    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    int w = buffer[0] + buffer[1] * 256;
+    ifs.seekg(0x2a);  //高
+    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    int h = buffer[0] + buffer[1] * 256;
+    ifs.close();
+    return {w, h};
+}
+imgopt::Size imgopt::ImgOpt::GetTiffMMSize(std::ifstream& ifs) {
+    unsigned char buffer[4];
+    ifs.seekg(0x1e);  //宽
+    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    int w = buffer[0] * 256 + buffer[1];
+    ifs.seekg(0x2a);  //宽
+    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    int h = buffer[0] * 256 + buffer[1];
+    ifs.close();
+    return {w, h};
 }
