@@ -120,7 +120,7 @@ imgopt::Size imgopt::ImgOpt::GetJpegSize(std::ifstream& ifs) {
         if (header[0] == 0xff) {
             next_pos = header[2] * 256 + header[3] + next_pos + 2;
         }
-        if (header[1] == 0xc0) {
+        if (header[1] == 0xc0 || header[1] == 0xc2) {
             ret.h = header[5] * 256 + header[6];
             ret.w = header[7] * 256 + header[8];
             ifs.close();
