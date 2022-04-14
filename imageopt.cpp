@@ -76,6 +76,7 @@ imgopt::Size imgopt::ImgOpt::GetImageSize(const std::string imageFilePath) {
         return {0, 0};
     } else {
         ImageType type = this->GetImageType(ifs);
+        Size ret = {0, 0};
         switch (type) {
             case JPG: return this->GetJpegSize(ifs);
             case PNG: return this->GetPngSize(ifs);
@@ -84,8 +85,9 @@ imgopt::Size imgopt::ImgOpt::GetImageSize(const std::string imageFilePath) {
             case GIF: return this->GetGifSize(ifs);
             case TIFF_II: return this->GetTiffIISize(ifs);
             case TIFF_MM: return this->GetTiffMMSize(ifs);
-            default: return {0, 0};
+            default: break;
         }
+        return ret;
     }
 #else
     FILE* fin = fopen(imageFilePath.c_str(), "rb+");
@@ -130,8 +132,8 @@ imgopt::Size imgopt::ImgOpt::GetJpegSize(std::ifstream& ifs) {
 imgopt::Size imgopt::ImgOpt::GetPngSize(std::ifstream& ifs) {
     Size ret = {0, 0};
     unsigned char buffer[8];  //前4个字节是宽度，后4个字节是高度
-    ifs.seekg(16);            //宽高信息相对于文件头偏移16个字节
-    ifs.read((char*)&buffer[0], sizeof(buffer) * 8);
+    ifs.seekg(0x10);          //宽高信息相对于文件头偏移16个字节
+    ifs.read((char*)&buffer, sizeof(char) * 8);
     ret.w = buffer[0] * 65536 + buffer[1] * 4096 + buffer[2] * 256 + buffer[3];
     ret.h = buffer[4] * 65536 + buffer[5] * 4096 + buffer[6] * 256 + buffer[7];
     ifs.close();
@@ -141,7 +143,7 @@ imgopt::Size imgopt::ImgOpt::GetBmpSize(std::ifstream& ifs) {
     Size ret = {0, 0};
     unsigned char buffer[8];  //前4个字节是宽度，后4个字节是高度
     ifs.seekg(18);            //宽高信息相对于文件头偏移18个字节
-    ifs.read((char*)&buffer[0], sizeof(buffer) * 8);
+    ifs.read((char*)&buffer, sizeof(char) * 8);
     ret.w = buffer[3] * 65536 + buffer[2] * 4096 + buffer[1] * 256 + buffer[0];
     ret.h = buffer[7] * 65536 + buffer[6] * 4096 + buffer[5] * 256 + buffer[4];
     ifs.close();
@@ -151,7 +153,7 @@ imgopt::Size imgopt::ImgOpt::GetWebpSize(std::ifstream& ifs) {
     Size ret = {0, 0};
     unsigned char buffer[4];  //前2个字节是宽度，后2个字节是高度
     ifs.seekg(26);            //宽高信息相对于文件头偏移26个字节
-    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    ifs.read((char*)&buffer, sizeof(char) * 4);
     ret.w = buffer[0] + buffer[1] * 256;
     ret.h = buffer[2] + buffer[3] * 256;
     ifs.close();
@@ -161,7 +163,7 @@ imgopt::Size imgopt::ImgOpt::GetGifSize(std::ifstream& ifs) {
     Size ret = {0, 0};
     unsigned char buffer[4];  //前2个字节是宽度，后2个字节是高度
     ifs.seekg(6);             //宽高信息相对于文件头偏移6个字节
-    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    ifs.read((char*)&buffer, sizeof(char) * 4);
     ret.w = buffer[0] + buffer[1] * 256;
     ret.h = buffer[2] + buffer[3] * 256;
     ifs.close();
@@ -170,10 +172,10 @@ imgopt::Size imgopt::ImgOpt::GetGifSize(std::ifstream& ifs) {
 imgopt::Size imgopt::ImgOpt::GetTiffIISize(std::ifstream& ifs) {
     unsigned char buffer[4];
     ifs.seekg(0x1e);  //宽
-    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    ifs.read((char*)&buffer, sizeof(char) * 4);
     int w = buffer[0] + buffer[1] * 256;
     ifs.seekg(0x2a);  //高
-    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    ifs.read((char*)&buffer, sizeof(char) * 4);
     int h = buffer[0] + buffer[1] * 256;
     ifs.close();
     return {w, h};
@@ -181,10 +183,10 @@ imgopt::Size imgopt::ImgOpt::GetTiffIISize(std::ifstream& ifs) {
 imgopt::Size imgopt::ImgOpt::GetTiffMMSize(std::ifstream& ifs) {
     unsigned char buffer[4];
     ifs.seekg(0x1e);  //宽
-    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    ifs.read((char*)&buffer, sizeof(char) * 4);
     int w = buffer[0] * 256 + buffer[1];
-    ifs.seekg(0x2a);  //宽
-    ifs.read((char*)&buffer[0], sizeof(buffer) * 4);
+    ifs.seekg(0x2a);  //高
+    ifs.read((char*)&buffer, sizeof(char) * 4);
     int h = buffer[0] * 256 + buffer[1];
     ifs.close();
     return {w, h};
